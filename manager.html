@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Prompt Vault</title>
+  <link rel="stylesheet" href="themes.css" />
+  <link rel="stylesheet" href="manager.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="icons/icon48.png" alt="" />
+        <div>
+          <strong>Prompt Vault</strong>
+          <span>Local-first</span>
+        </div>
+      </div>
+
+      <nav class="nav-section" id="primaryNav">
+        <button class="nav-item active" data-filter="all">
+          <span class="nav-icon">⌂</span><span>所有提示</span><span class="nav-count" id="allCount">0</span>
+        </button>
+        <button class="nav-item" data-filter="favorite">
+          <span class="nav-icon">☆</span><span>收藏</span><span class="nav-count" id="favoriteCount">0</span>
+        </button>
+        <button class="nav-item" data-filter="recent">
+          <span class="nav-icon">◷</span><span>最近使用</span><span class="nav-count" id="recentCount">0</span>
+        </button>
+      </nav>
+
+      <div class="section-title-row">
+        <span>文件夹</span>
+        <button class="icon-button small" id="quickAddFolder" title="新建文件夹">＋</button>
+      </div>
+      <nav class="folder-list" id="folderList"></nav>
+
+      <div class="sidebar-footer">
+        <button class="sidebar-action" id="newPromptSidebar">＋ 新建提示</button>
+        <button class="sidebar-action" id="newFolderSidebar"><span class="folder-symbol" aria-hidden="true"></span> 新建文件夹</button>
+        <button class="sidebar-action" id="openSettings">⚙ 设置</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="search-wrap">
+          <span>⌕</span>
+          <input aria-label="搜索提示词" id="searchInput" type="search" placeholder="搜索标题、内容、标签、文件夹…" autocomplete="off" />
+          <button type="button" id="clearSearch" aria-label="清除搜索" title="清除搜索">×</button>
+          <kbd>⌘K</kbd>
+        </div>
+        <div class="toolbar">
+          <button class="secondary-button" id="shortcutsHelp" title="查看快捷键" aria-label="快捷键说明">快捷键</button>
+          <select id="headerThemeSelect" aria-label="主题"></select>
+          <button class="secondary-button" id="settingsButton">设置</button>
+          <button class="primary-button" id="newPromptButton">＋ 新建提示</button>
+        </div>
+      </header>
+
+      <section class="content-header">
+        <div>
+          <h1 id="pageTitle">所有提示</h1>
+          <p id="pageSubtitle">0 个提示</p>
+        </div>
+        <div class="view-controls">
+          <button id="viewModeToggle" class="secondary-button" aria-pressed="false" aria-label="完整卡片 · 切换精简模式">完整卡片 · 切换精简模式</button>
+          <select id="sortSelect" aria-label="排序">
+            <option value="updated">最近更新</option>
+            <option value="used">最近使用</option>
+            <option value="title">标题</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="cards-grid" id="cardsGrid"></section>
+      <div class="empty-state hidden" id="emptyState">
+        <div class="empty-icon">✦</div>
+        <h2>还没有提示词</h2>
+        <p>新建一个提示词，或者从 JSON / CSV 导入。</p>
+        <button class="primary-button" id="emptyNewPrompt">新建提示</button>
+      </div>
+      <div id="loadSentinel" class="load-sentinel"></div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop hidden" id="promptModalBackdrop">
+    <section class="modal prompt-modal" role="dialog" aria-modal="true" aria-labelledby="promptModalTitle">
+      <header class="modal-header">
+        <div>
+          <h2 id="promptModalTitle">新建提示</h2>
+          <p>点击保存后写入本地。</p>
+        </div>
+        <button class="icon-button" data-close="prompt" aria-label="关闭">×</button>
+      </header>
+      <form id="promptForm" class="modal-body form-stack">
+        <input type="hidden" id="promptId" />
+        <label>
+          <span>标题 *</span>
+          <input id="promptTitle" required maxlength="120" placeholder="例如：5岁小孩 + 第一性原理" />
+        </label>
+        <label>
+          <span>文本 *</span>
+          <textarea id="promptContent" required rows="11" placeholder="提示内容。支持 {{name}}、{{tone::list-happy;sad}}、{{count::number-0}}、{{bio::largeText}}"></textarea>
+        </label>
+        <div class="variable-hint" id="variableHint">未检测到变量</div>
+        <label>
+          <span>描述</span>
+          <textarea id="promptDescription" rows="3" placeholder="对提示的简短描述"></textarea>
+        </label>
+        <div class="form-row two-columns">
+          <label>
+            <span>标签</span>
+            <input id="promptTags" placeholder="架构, 分析, 工作" />
+          </label>
+          <label>
+            <span>文件夹</span>
+            <select id="promptFolder"></select>
+          </label>
+        </div>
+        <label class="checkbox-row">
+          <input type="checkbox" id="promptFavorite" />
+          <span>加入收藏</span>
+        </label>
+      </form>
+      <footer class="modal-footer">
+        <button class="danger-link hidden" id="deletePromptButton" type="button">删除</button>
+        <div class="modal-spacer"></div>
+        <button class="secondary-button" type="button" data-close="prompt" aria-label="关闭">取消</button>
+        <button class="primary-button" type="submit" form="promptForm">保存</button>
+      </footer>
+    </section>
+  </div>
+
+  <div class="modal-backdrop hidden" id="variableModalBackdrop">
+    <section class="modal variable-modal" role="dialog" aria-modal="true" aria-labelledby="variableModalTitle" aria-describedby="variablePromptTitle">
+      <header class="modal-header">
+        <div>
+          <h2 id="variableModalTitle">填写变量</h2>
+          <p id="variablePromptTitle"></p>
+        </div>
+        <button class="icon-button" data-close="variable" aria-label="关闭">×</button>
+      </header>
+      <form id="variableForm" class="modal-body form-stack"></form>
+      <footer class="modal-footer">
+        <button class="secondary-button" type="button" data-close="variable" aria-label="关闭">取消</button>
+        <button class="primary-button" type="submit" form="variableForm">生成并复制</button>
+      </footer>
+    </section>
+  </div>
+
+  <div class="modal-backdrop hidden" id="folderModalBackdrop">
+    <section class="modal small-modal" role="dialog" aria-modal="true" aria-labelledby="folderModalTitle">
+      <header class="modal-header">
+        <div><h2 id="folderModalTitle">新建文件夹</h2></div>
+        <button class="icon-button" data-close="folder" aria-label="关闭">×</button>
+      </header>
+      <form id="folderForm" class="modal-body form-stack">
+        <input type="hidden" id="folderId" />
+        <label>
+          <span>文件夹名称 *</span>
+          <input id="folderName" required maxlength="60" placeholder="例如：系统架构师" />
+        </label>
+      </form>
+      <footer class="modal-footer">
+        <button class="danger-link hidden" id="deleteFolderButton" type="button">删除文件夹</button>
+        <div class="modal-spacer"></div>
+        <button class="secondary-button" type="button" data-close="folder" aria-label="关闭">取消</button>
+        <button class="primary-button" type="submit" form="folderForm">保存</button>
+      </footer>
+    </section>
+  </div>
+
+  <div class="modal-backdrop hidden" id="settingsModalBackdrop">
+    <section class="modal settings-modal" role="dialog" aria-modal="true" aria-label="设置">
+      <header class="settings-tabs">
+        <button class="settings-tab active" data-settings-tab="general">常规设置</button>
+        <button class="settings-tab" data-settings-tab="folders">管理文件夹</button>
+        <button class="settings-tab" data-settings-tab="importexport">导入与导出</button>
+        <button class="icon-button settings-close" data-close="settings" aria-label="关闭">×</button>
+      </header>
+      <div class="settings-body">
+        <section class="settings-panel active" data-settings-panel="general">
+          <h2>常规设置</h2>
+          <div class="setting-row">
+            <div><strong>主题</strong><p>13 种主题，所有页面即时同步。</p></div>
+            <select aria-label="主题" id="themeSelect">
+              <option value="system">跟随系统</option>
+              <option value="light">浅色</option>
+              <option value="dark">深色</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <div><strong>卡片密度</strong><p>舒适模式显示更多预览内容。</p></div>
+            <select aria-label="卡片密度" id="densitySelect">
+              <option value="comfortable">舒适</option>
+              <option value="compact">紧凑</option>
+            </select>
+          </div>
+          <div class="sync-note">
+            <strong>本地优先模式</strong>
+            <p>提示词存储在 IndexedDB。所有写入同时记录 Change Log，为后续 Supabase / 自建 API 云同步预留。</p>
+            <span id="syncQueueCount">0 个待同步变更</span>
+          </div>
+        </section>
+
+        <section class="settings-panel" data-settings-panel="folders">
+          <div class="settings-heading-row">
+            <div><h2>管理文件夹</h2><p>删除文件夹不会删除其中的提示词。</p></div>
+            <button class="primary-button" id="settingsAddFolder">＋ 新建文件夹</button>
+          </div>
+          <div id="settingsFolderList" class="settings-folder-list"></div>
+        </section>
+
+        <section class="settings-panel" data-settings-panel="importexport">
+          <h2>导出提示</h2>
+          <p>JSON 会保留文件夹、标签、收藏和元数据；CSV 适合表格编辑。</p>
+          <div class="button-stack">
+            <button class="wide-button" id="exportJson">导出 JSON</button>
+            <button class="wide-button" id="exportCsv">导出 CSV（表格安全）</button>
+            <button class="wide-button" id="exportRawCsv">导出原始 CSV（保留公式前缀）</button>
+          </div>
+
+          <h2 class="settings-section-gap">导入提示</h2>
+          <p>支持 Prompt Vault JSON，以及包含 title/content/description/tags/folder/favorite 列的 CSV。</p>
+          <div class="button-stack">
+            <button class="wide-button" id="importJson">导入 JSON</button>
+            <button class="wide-button" id="importCsv">导入 CSV</button>
+          </div>
+          <input type="file" id="fileInput" class="hidden" />
+
+          <div class="danger-zone">
+            <h2>危险区域</h2>
+            <p>清空提示词、文件夹和待同步记录。设置与设备标识保留，此操作不可恢复。</p>
+            <button class="wide-button danger" id="clearAll">清空提示词与文件夹</button>
+          </div>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast-container" role="status" aria-live="polite" id="toastContainer"></div>
+
+  <script type="module" src="manager.js"></script>
+</body>
+</html>

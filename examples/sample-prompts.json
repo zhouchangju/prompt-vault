@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "app": "Prompt Vault",
+  "exportedAt": "2026-09-18T10:55:00.000Z",
+  "folders": [
+    {
+      "id": "sample-folder-analysis",
+      "name": "分析",
+      "parentId": null,
+      "sortOrder": 0,
+      "createdAt": 1789728900000,
+      "updatedAt": 1789728900000,
+      "version": 1,
+      "deviceId": "sample",
+      "deletedAt": null
+    }
+  ],
+  "prompts": [
+    {
+      "id": "sample-prompt-first-principles",
+      "title": "5岁小孩 + 第一性原理",
+      "content": "帮我用第一性原理和苏格拉底式的方法分析 {{目标内容::largeText}}。请说明：它是什么、它不是什么、它能解决什么问题、不能解决什么问题、实现原理和机制。文字要简洁易懂，就当我是个5岁小孩。",
+      "description": "用第一性原理快速拆解复杂概念",
+      "folderId": "sample-folder-analysis",
+      "tags": ["第一性原理", "苏格拉底", "分析"],
+      "favorite": true,
+      "sortOrder": 0,
+      "createdAt": 1789728900000,
+      "updatedAt": 1789728900000,
+      "lastUsedAt": null,
+      "useCount": 0,
+      "version": 1,
+      "deviceId": "sample",
+      "deletedAt": null
+    }
+  ]
+}

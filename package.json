@@ -1,0 +1,28 @@
+{
+  "name": "prompt-vault",
+  "version": "0.4.3",
+  "private": true,
+  "type": "module",
+  "description": "Local-first Chrome prompt manager",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs",
+    "test": "node --test tests/*.test.js",
+    "test:e2e": "playwright test",
+    "test:shortcut:manual": "node scripts/manual-shortcut-test.mjs",
+    "test:package": "node scripts/smoke-package.mjs",
+    "verify": "npm run check && npm test && npm run test:e2e",
+    "package": "node scripts/package.mjs",
+    "icons": "node scripts/generate-icons.mjs",
+    "benchmark": "node scripts/benchmark.mjs"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.63.0",
+    "fake-indexeddb": "6.2.5",
+    "fflate": "0.8.3"
+  }
+}

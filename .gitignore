@@ -1,0 +1,55 @@
+# macOS and local editors
+.DS_Store
+._*
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local secrets; sanitized examples stay reviewable
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Private prompts, browser profiles and temporary task artifacts
+.private/
+.local/
+.cache/
+AGENTS.local.md
+Codex.local.md
+*.log
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+.codegraph/
+
+# User exports; examples/sample-prompts.json stays versioned
+prompt-vault-*.json
+prompt-vault-*.csv
+AI-Prompt-Genius-Prompts_*.json
+
+# Development dependencies, build outputs and test artifacts
+node_modules/
+dist/
+build/
+coverage/
+playwright-report/
+test-results/
+.nyc_output/
+*.tsbuildinfo
+blob-report/
+playwright/.cache/
+
+# Distribution bundles and signing material
+*.zip
+*.crx
