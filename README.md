@@ -2,7 +2,7 @@
 
 本地优先的 Chrome 提示词管理扩展：整理提示词、切换卡片或精简展示，在侧边栏搜索、填写变量并复制。
 
-**0.4.3** 使用原生 ES modules、HTML/CSS 与 IndexedDB。扩展运行不需构建或第三方运行时依赖；开发验证使用 Node.js 22+。云同步、账号和网页输入框插入尚未实现。
+**0.5.0** 使用原生 ES modules、HTML/CSS 与 IndexedDB。扩展运行不需构建或第三方运行时依赖；开发验证使用 Node.js 22+。支持可选 Supabase 增量同步；无需账号登录，网页输入框插入尚未实现。
 
 ## 使用
 
@@ -21,13 +21,17 @@
 
 上图使用合成示例数据。[完整卡片与森林主题](docs/images/cards-forest-v0.4.0.png) 展示另一种组合。
 
+## 云同步
+
+在完整管理页的「设置 → 云同步」填写自己项目的 URL 和 publishable/anon key，保存并允许访问项目域名，再测试连接。打开页面先显示本地内容，再拉取一次；编辑只保存本地，点击顶部「立即同步」才上传。没有定时任务或后台监控。详见 [配置与使用](docs/cloud-sync.md)。
+
 ## 数据边界
 
 所有日常操作在本地完成。定期导出 JSON；浏览器登录不会自动同步提示词。JSON 导出仅含存活提示词与分组，不含设置、墓碑和队列；同 ID 导入经预览确认后覆盖，建议先备份。
 
 CSV 不保留 ID、版本和使用历史，重复导入会新增。默认导出保护电子表格公式前缀；原始文本导出不提供该保护，JSON 更适合无损迁移。数据与系统剪贴板没有应用层加密。
 
-删除提示词保留本地墓碑；清空数据删除实体与队列，保留设置及设备/版本元数据。详见 [数据契约](docs/data-model.md) 和 [隐私说明](docs/privacy.md)。队列按实体合并并限制为 10,000 条，尚无云消费者、确认和冲突协议，不是同步服务。
+删除提示词保留本地墓碑；清空数据删除实体与队列，保留设置及设备/版本元数据。详见 [数据契约](docs/data-model.md) 和 [隐私说明](docs/privacy.md)。队列按实体合并并限制为 10,000 条，此旧占位队列不作为云同步日志；0.5.0 另用云端基线与持久化请求执行同步，避免历史裁剪漏项。
 
 ## 开发与验证
 
@@ -42,7 +46,7 @@ npm run build
 npm run package
 ```
 
-`npm run verify` 串行运行静态、单元与扩展测试，`npm run test:package` 验证解压后的实际安装包。打包输出 `dist/prompt-vault-0.4.3.zip`，采用运行资源白名单。0.2.0 基线验证见 [历史记录](docs/reviews/2026-09-18-v0.2.0-validation.md)，0.3.0 交互改造见 [交互验证](docs/reviews/2026-09-18-v0.3.0-interactions.md)，0.4.0 见 [本轮验证](docs/reviews/2026-09-18-v0.4.0-stability.md)。远程 CI 状态见 GitHub Actions。
+`npm run verify` 串行运行静态、单元与扩展测试，`npm run test:package` 验证解压后的实际安装包。打包输出 `dist/prompt-vault-0.5.0.zip`，采用运行资源白名单。0.2.0 基线验证见 [历史记录](docs/reviews/2026-09-18-v0.2.0-validation.md)，0.3.0 交互改造见 [交互验证](docs/reviews/2026-09-18-v0.3.0-interactions.md)，0.4.0 见 [本轮验证](docs/reviews/2026-09-18-v0.4.0-stability.md)。远程 CI 状态见 GitHub Actions。
 
 [文档导航](docs/README.md) · [新增功能方案](docs/decisions/0002-compact-themes-hardening.md) · [实施清单](docs/implementation-checklist.md) · [贡献指南](CONTRIBUTING.md)
 
@@ -51,3 +55,5 @@ npm run package
 ## 许可
 
 许可证及正式安全接收渠道仍待维护者决定。图标已替换为项目脚本生成的几何标识；完整来源与开发依赖见 [来源记录](docs/provenance.md)。
+
+0.5.0 云同步的本地验证、真实 SQL 接口集成及云端待验证边界见 [本轮记录](docs/reviews/2026-09-19-v0.5.0-sync.md)。

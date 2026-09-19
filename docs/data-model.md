@@ -1,6 +1,6 @@
 # 数据模型与交换格式
 
-适用版本：0.4.0。IndexedDB 名称 `prompt-vault-db`，版本仍为 `1`，沿用原库和已有记录，不通过清库升级。
+适用版本：0.5.0。IndexedDB 名称 `prompt-vault-db`，版本仍为 `1`，沿用原库和已有记录，不通过清库升级。
 
 ## 存储与并发
 
@@ -9,9 +9,9 @@
 | prompts | id | 提示词；folderId、updatedAt、deletedAt 索引 |
 | folders | id | 分组；updatedAt、deletedAt 索引 |
 | syncQueue | id | 按实体合并的最新意图；createdAt 索引 |
-| meta | key | deviceId、revision、coalescedQueue、syncNeedsFullRescan |
+| meta | key | 设备/版本元数据、cloudState、云端基线与冲突备份 |
 
-设备标识在事务内初始化，优先迁移旧 chrome.storage.local.deviceId，之后以 meta 为准。revision 是变更基线，同时提供实体版本下限，防止清空/导入后版本倒退造成过期写入被接受。coalescedQueue 标记旧队列已合并；syncNeedsFullRescan 表示未来同步不能仅依赖现存队列。
+设备标识在事务内初始化，优先迁移旧 chrome.storage.local.deviceId，之后以 meta 为准。revision 是变更基线，同时提供实体版本下限，防止清空/导入后版本倒退造成过期写入被接受。coalescedQueue 标记旧队列已合并；syncNeedsFullRescan 表示旧队列可能不完整；0.5.0 同步始终比较本地实体与云端基线，不消费此占位队列。
 
 实体变更、版本检查、队列及 revision 在同一个写事务内提交，随后通知其他页面。更新或删除已有实体必须使用读取时的版本；冲突拒绝写入。使用记录本地更新，不增加实体版本或加入队列，但会触发变更通知。
 
@@ -25,7 +25,7 @@ Folder 包含 id、name、parentId、sortOrder、createdAt、updatedAt、version
 
 0.4.0 的文件夹排序提交完整存活 ID/版本列表，在单一事务校验并重排 sortOrder，同时更新实体版本、队列及变更基线。新建分组追加末尾；旧排序值无法安全递增时，在事务内按原顺序规范化后追加。侧栏的累计 useCount 仍持久化，但用于排序的分数在面板会话内冻结，收藏优先状态可实时调整。
 
-队列记录 id、entityType、entityId、operation、createdAt。每实体保留最新意图；旧队列在写入时合并。最多 10,000 条，超限裁剪旧意图并设置 syncNeedsFullRescan。没有消费者、服务端确认、重试或全量重扫实现，不能视为同步日志或完整灾备记录。
+队列记录 id、entityType、entityId、operation、createdAt。每实体保留最新意图；旧队列在写入时合并。最多 10,000 条，超限裁剪旧意图并设置 syncNeedsFullRescan。该队列不能视为同步日志或完整灾备记录。实际云端确认与断响应恢复由下文的 cloudState.pending 和 cloud:base 元数据承担。
 
 ## JSON
 
@@ -60,6 +60,23 @@ Folder 包含 id、name、parentId、sortOrder、createdAt、updatedAt、version
 
 ## 删除与兼容
 
-软删除保留墓碑；删除分组将存活提示词移出分组。清空操作删除 prompts、folders、syncQueue，保留 meta 与 chrome.storage.local 设置，推进版本下限并标记需全量重扫。
+软删除保留墓碑；删除分组将存活提示词移出分组。清空操作删除 prompts、folders、syncQueue，保留设备/版本元数据与 chrome.storage.local 设置；移除云端基线及本地冲突备份，重置拉取游标并更换 epoch，推进版本下限。存在未确认上传时拒绝清空。
 
-后续 DB/schema 升级需要旧数据迁移测试。同步身份、冲突、副本、墓碑回收和清空传播另行设计。
+后续 DB/schema 升级仍需旧数据迁移测试。当前清空不传播至云端，云端墓碑和日志不自动回收；回收或云端全清需另行设计协议。
+
+
+## 0.5.0 同步元数据（数据库仍为 v1）
+
+仅扩展已有 meta，不创建新 store 或清库升级：
+
+- cloudState：绑定项目 origin、本机 epoch、拉取 cursor、lastPullAt、冻结 pending 请求及当前冲突。没有 API key。
+- cloud:base:<类型>:<ID>：最近已应用或经用户解决的完整服务端实体与 serverVersion。
+- cloud:backup:<时间>:<随机ID>：冲突处理前的完整存活本地快照；仅显式导出时读取正文，普通状态刷新只列备份键。
+
+配置 URL/key/autoPull 位于独立 chrome.storage.local.cloudConnection，全部排除于 JSON/CSV 导出。既有使用次数和最近使用不上传。
+
+清空仅影响本机：同时删除 cloud:* 基线/备份，并把 cloudState 游标归零、epoch 换新，防止旧响应落入清空后的库。存在结果未确认的 pending 时拒绝清空。已绑定云库时拒绝底层 replace 导入，普通合并导入不变。
+
+同步不是消费旧 syncQueue；每轮按云端基线对比本地实体，因此旧队列的 10,000 条裁剪不会遗失同步内容。旧墓碑没有云端基线时不推断为云端删除；新建后在首次上传前删除的本地实体也不上传。
+
+冲突按完整远端事件暂停游标。选择本地或云端都创建备份，然后在同一事务更新实体、基线和游标；远端删除与保留本地相遇时创建新 ID。目录删除会把本地新增子项移至未分组，保留正文。
