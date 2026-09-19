@@ -40,7 +40,7 @@ button { cursor: pointer; }
 }
 .search-wrap input { flex: 1; border: 0; outline: none; background: transparent; min-width: 0; }
 kbd { color: var(--muted); border: 1px solid var(--border); background: var(--surface-2); border-radius: 6px; padding: 2px 6px; font-size: 11px; }
-.toolbar { display: flex; gap: 8px; }
+.toolbar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .primary-button, .secondary-button, .wide-button {
   border-radius: 10px; min-height: 40px; padding: 0 15px; font-weight: 700; border: 1px solid transparent;
 }
@@ -108,7 +108,7 @@ kbd { color: var(--muted); border: 1px solid var(--border); background: var(--su
 .variable-hint { color: var(--muted); font-size: 12px; background: var(--surface-2); padding: 9px 11px; border-radius: 9px; }
 .danger-link { border: 0; background: transparent; color: var(--danger); font-weight: 700; }
 
-.settings-tabs { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); padding: 12px 48px 0 12px; border-bottom: 1px solid var(--border); }
+.settings-tabs { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 12px 48px 0 12px; border-bottom: 1px solid var(--border); }
 .settings-tab { border: 0; background: transparent; min-height: 45px; border-bottom: 2px solid transparent; font-weight: 700; }
 .settings-tab.active { color: var(--primary-strong); border-color: var(--primary); }
 .settings-close { position: absolute; right: 10px; top: 10px; }
@@ -192,3 +192,13 @@ kbd { color: var(--muted); border: 1px solid var(--border); background: var(--su
 #variableForm { gap: 22px; }
 #variableForm textarea { font-size: 15px; line-height: 1.7; min-height: 170px; }
 #viewModeToggle { white-space: nowrap; }
+
+#syncNow { display: inline-block; }
+.cloud-status, #syncStatus { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.sync-form { display: grid; gap: 10px; }
+.sync-form > input { min-width: 0; width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+.sync-checkbox { display: flex; align-items: center; gap: 8px; }
+.sync-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+#syncConflicts pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 260px; overflow: auto; font-size: 12px; }
+#syncConflicts details { padding: 8px 0; border-top: 1px solid var(--border); }
+#syncBackupSelect { max-width: 100%; }

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Prompt Vault - Local Prompt Manager",
-  "version": "0.4.3",
+  "version": "0.5.0",
   "minimum_chrome_version": "142",
   "description": "A fast, local-first prompt manager with folders, tags, variables, search, import/export and a Chrome side panel.",
   "permissions": [
@@ -40,5 +40,8 @@
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  }
+  },
+  "optional_host_permissions": [
+    "https://*.supabase.co/*"
+  ]
 }

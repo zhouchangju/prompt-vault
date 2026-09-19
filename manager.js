@@ -4,6 +4,7 @@ import { openDialog, closeDialog } from './ui/dialog.js';
 import { renderVariableFields, readVariableValues } from './ui/variables.js';
 import { bindShortcuts, prepareCard, shouldUseCard, installShortcutsHelp } from './ui/interactions.js';
 import { copyAndRefresh } from './ui/copy.js';
+import { initializeSyncManager, loadSyncSettings } from './ui/sync-settings.js';
 import {
   listPrompts,
   savePrompt,
@@ -11,7 +12,6 @@ import {
   listFolders, reorderFolders,
   saveFolder,
   softDeleteFolder,
-  getPendingSyncCount,
   exportSnapshot,
   importSnapshot,
   previewSnapshotImport, previewCsvImport, importCsvRows, subscribeToChanges,
@@ -62,6 +62,7 @@ async function init() {
   bindEvents();
   setupInfiniteScroll();
   await reloadData();
+  initializeSyncManager({ showSettings: async () => { await openSettings(); switchSettingsTab('sync'); } });
 
   const params = new URLSearchParams(location.search);
   if (params.get('new') === '1') openPromptModal();
@@ -634,8 +635,7 @@ function renderSettingsFolders(preserveDrafts = false) {
 }
 
 async function openSettings() {
-  const count = await getPendingSyncCount();
-  el('syncQueueCount').textContent = `${count} 个待同步变更（当前版本未连接云端）`;
+  await loadSyncSettings();
   renderSettingsFolders();
   showModal('settings');
 }
@@ -687,7 +687,7 @@ async function handleImportFile(event) {
 }
 
 async function handleClearAll() {
-  if (!confirm('确定清空所有提示词、文件夹和待同步记录吗？设置与设备标识会保留，建议先导出 JSON 备份。')) return;
+  if (!confirm('确定清空本机提示词、目录、未上传修改和冲突备份吗？云端不删除，以后同步会重新下载；建议先导出 JSON 备份。')) return;
   if (!confirm('再次确认：此操作不可恢复。')) return;
   await clearAllData();
   state.folderId = null;

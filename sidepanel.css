@@ -79,3 +79,6 @@ button:disabled { opacity: .6; cursor: wait; }
 #panelVariableForm { gap: 18px; padding: 14px; }
 #panelVariableForm textarea { font-size: 15px; line-height: 1.7; min-height: 170px; resize: vertical; }
 #panelVariableForm label { font-size: 14px; gap: 8px; }
+
+.panel-sync-status { margin: 0 14px; font-size: 11px; color: var(--muted); }
+.panel-sync-status:empty { display: none; }

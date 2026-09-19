@@ -333,6 +333,7 @@ async function commitImport(source, preview) {
     const current = await state(tx);
     if (current.revision !== plan.revision) throw new ConflictError('预览后数据发生变化，请重新预览导入。');
     const now = Date.now();
+    if (plan.replace && (await requestToPromise(tx.objectStore('meta').get('cloudState')))) throw new Error('已绑定云同步时不支持覆盖式替换，请使用合并导入。');
     if (plan.replace) {
       for (const row of [...current.prompts, ...current.folders]) revision.value = Math.max(revision.value, row.version + 1);
       tx.objectStore('prompts').clear(); tx.objectStore('folders').clear(); tx.objectStore('syncQueue').clear(); tx.objectStore('meta').put({ key: 'syncNeedsFullRescan', value: true }); }
@@ -353,9 +354,19 @@ export async function importSnapshot(snapshot, { preview, replace = false } = {}
 export async function importCsvRows(rows, { preview } = {}) { await commitImport(rows, preview || await previewCsvImport(rows)); }
 export async function clearAllData() {
   await mutate(async (tx, device, revision) => {
+    const cloud = await requestToPromise(tx.objectStore('meta').get('cloudState'));
+    if (cloud?.value.pending) throw new Error('存在结果尚未确认的上传，请先立即同步完成确认，再清空本机数据。');
+    for (const entry of await requestToPromise(tx.objectStore('meta').getAll())) {
+      if (entry.key.startsWith('cloud:')) tx.objectStore('meta').delete(entry.key);
+    }
+    if (cloud) tx.objectStore('meta').put({ key: 'cloudState', value: { project: cloud.value.project, epoch: crypto.randomUUID(), cursor: '0' } });
     const current = await state(tx);
     for (const row of [...current.prompts, ...current.folders]) revision.value = Math.max(revision.value, row.version + 1);
     tx.objectStore('prompts').clear(); tx.objectStore('folders').clear(); tx.objectStore('syncQueue').clear();
     tx.objectStore('meta').put({ key: 'syncNeedsFullRescan', value: true });
   });
 }
+
+// Cloud metadata lives in the existing meta store: additive, no database upgrade.
+export const readCloudTransaction = body => transaction(STORES, 'readonly', body);
+export const writeCloudTransaction = body => mutate(body, 'sync');

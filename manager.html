@@ -55,6 +55,7 @@
           <button class="secondary-button" id="shortcutsHelp" title="查看快捷键" aria-label="快捷键说明">快捷键</button>
           <select id="headerThemeSelect" aria-label="主题"></select>
           <button class="secondary-button" id="settingsButton">设置</button>
+          <button class="secondary-button" id="syncNow" data-sync-control>立即同步</button>
           <button class="primary-button" id="newPromptButton">＋ 新建提示</button>
         </div>
       </header>
@@ -63,6 +64,7 @@
         <div>
           <h1 id="pageTitle">所有提示</h1>
           <p id="pageSubtitle">0 个提示</p>
+          <p id="cloudStatus" class="cloud-status" role="status" aria-live="polite">云同步未配置</p>
         </div>
         <div class="view-controls">
           <button id="viewModeToggle" class="secondary-button" aria-pressed="false" aria-label="完整卡片 · 切换精简模式">完整卡片 · 切换精简模式</button>
@@ -176,6 +178,7 @@
     <section class="modal settings-modal" role="dialog" aria-modal="true" aria-label="设置">
       <header class="settings-tabs">
         <button class="settings-tab active" data-settings-tab="general">常规设置</button>
+        <button class="settings-tab" data-settings-tab="sync">云同步</button>
         <button class="settings-tab" data-settings-tab="folders">管理文件夹</button>
         <button class="settings-tab" data-settings-tab="importexport">导入与导出</button>
         <button class="icon-button settings-close" data-close="settings" aria-label="关闭">×</button>
@@ -200,9 +203,38 @@
           </div>
           <div class="sync-note">
             <strong>本地优先模式</strong>
-            <p>提示词存储在 IndexedDB。所有写入同时记录 Change Log，为后续 Supabase / 自建 API 云同步预留。</p>
+            <p>提示词保存在本机。配置云同步后，打开页面只拉取一次；点击立即同步才上传，无定时任务。</p>
             <span id="syncQueueCount">0 个待同步变更</span>
           </div>
+        </section>
+
+        <section class="settings-panel" data-settings-panel="sync">
+          <h2>Supabase 云同步</h2>
+          <p>使用自己的独立项目，只填写 URL 和 publishable / anon key，不需要登录。</p>
+          <form id="syncConnectionForm" class="sync-form">
+            <label for="supabaseUrl">Project URL</label>
+            <input id="supabaseUrl" type="url" required placeholder="https://项目标识.supabase.co" autocomplete="off" spellcheck="false" />
+            <label for="supabaseKey">Publishable key / anon key</label>
+            <input id="supabaseKey" type="password" required autocomplete="off" spellcheck="false" />
+            <label class="sync-checkbox"><input type="checkbox" id="showSupabaseKey" /> 显示密钥</label>
+            <label class="sync-checkbox"><input type="checkbox" id="autoPullOnOpen" checked /> 每次打开页面后拉取一次（先显示本地数据）</label>
+            <p>配置仅保存在此浏览器，不进入导出文件。持有该项目有效 key 的人可读写整库，请勿公开配置；不要填写 secret / service_role。</p>
+            <div class="sync-actions">
+              <button type="submit" class="primary-button" data-sync-control>保存连接</button>
+              <button type="button" id="testSyncConnection" class="secondary-button" data-sync-control>测试连接</button>
+              <button type="button" id="removeSyncConnection" class="secondary-button" data-sync-control>移除配置</button>
+            </div>
+          </form>
+          <p id="syncStatus" role="status" aria-live="polite">云同步未配置</p>
+          <div id="syncConflicts"></div>
+          <div id="syncConflictActions" hidden>
+            <p>保留本地时，云端已删除的内容会另存为新 ID 的本地副本。处理只发生在本机，完成后点击立即同步继续。</p>
+            <button id="resolveSyncLocal" class="secondary-button" data-sync-control>保留本地</button>
+            <button id="resolveSyncCloud" class="secondary-button" data-sync-control>采用云端</button>
+          </div>
+          <h3>冲突处理前的本地备份</h3>
+          <select id="syncBackupSelect" aria-label="选择冲突备份"></select>
+          <button id="exportSyncBackup" class="secondary-button" data-sync-control>导出所选备份</button>
         </section>
 
         <section class="settings-panel" data-settings-panel="folders">
@@ -232,7 +264,7 @@
 
           <div class="danger-zone">
             <h2>危险区域</h2>
-            <p>清空提示词、文件夹和待同步记录。设置与设备标识保留，此操作不可恢复。</p>
+            <p>清空本机提示词、目录、未上传修改和冲突备份。云端不删除，以后同步会重新下载。设置保留，此操作不可恢复。</p>
             <button class="wide-button danger" id="clearAll">清空提示词与文件夹</button>
           </div>
         </section>

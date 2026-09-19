@@ -11,7 +11,7 @@ export const test = base.extend({
       channel: 'chromium', headless: true, viewport: { width: 1440, height: 1000 },
       args: [`--disable-extensions-except=${root}`, `--load-extension=${root}`]
     });
-    const errors = []; const requests = [];
+    const errors = []; const requests = []; const allowedOrigins = new Set();
     context.on('page', page => page.on('pageerror', error => errors.push(error.message)));
     context.on('request', request => { if (/^https?:/.test(request.url())) requests.push(request.url()); });
     try {
@@ -25,9 +25,9 @@ export const test = base.extend({
         if (entry.startsWith('manager')) await expect(page.locator('#headerThemeSelect option')).toHaveCount(13);
         return page;
       };
-      await use({ context, worker, origin, open, errors });
+      await use({ context, worker, origin, open, errors, allowNetwork: url => allowedOrigins.add(new URL(url).origin) });
       expect(errors, 'Uncaught extension errors').toEqual([]);
-      expect(requests, 'Runtime must remain local').toEqual([]);
+      expect(requests.filter(url => !allowedOrigins.has(new URL(url).origin)), 'Unconfigured runtime must remain local; sync tests allow only their mocked origin').toEqual([]);
     } finally { await context.close(); await rm(profile, { recursive: true, force: true }); }
   }
 });

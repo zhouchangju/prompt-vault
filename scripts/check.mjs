@@ -12,6 +12,7 @@ const pkg = JSON.parse(await readFile('package.json', 'utf8'));
 assert.equal(manifest.version, pkg.version, 'Manifest/package versions must match');
 assert.equal(manifest.manifest_version, 3);
 assert.deepEqual([...manifest.permissions].sort(), ['clipboardWrite', 'sidePanel', 'storage']);
+assert.deepEqual(manifest.optional_host_permissions, ['https://*.supabase.co/*']);
 JSON.parse(await readFile('examples/sample-prompts.json', 'utf8'));
 let syntaxCount = 0;
 async function walk(directory) {

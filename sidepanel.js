@@ -6,6 +6,7 @@ import { bindShortcuts, shouldUseCard, installShortcutsHelp } from './ui/interac
 import { openManagerFromPanel } from './ui/navigation.js';
 import { listPrompts, listFolders, reorderFolders, savePrompt, subscribeToChanges } from './db.js';
 import { copyAndRefresh } from './ui/copy.js';
+import { runSync, installSyncLifecycle } from './core/sync.js';
 import { normalizeText, extractVariables, resolveTemplate, getSettings, applyTheme, watchSettings } from './shared.js';
 
 const PAGE_SIZE = 60;
@@ -21,6 +22,12 @@ async function init() {
   on(window, 'focus', reloadData);
   bind();
   await reloadData();
+  installSyncLifecycle();
+  requestAnimationFrame(() => {
+    void runSync().then(result => {
+      if (!result.skipped) el('panelSyncStatus').textContent = result.conflict ? '存在同步冲突，请打开管理页处理' : '本次云端拉取已结束';
+    }).catch(error => { el('panelSyncStatus').textContent = error.message; });
+  });
 }
 
 let reloadRevision = 0;
